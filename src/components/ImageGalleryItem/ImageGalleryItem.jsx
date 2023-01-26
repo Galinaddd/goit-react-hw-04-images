@@ -1,40 +1,38 @@
 import css from './ImageGalleryItem.module.css';
 import { Modal } from '../Modal/Modal';
-import { Component } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
-export class ImageGalleryItem extends Component {
-  static propTypes = {
-    imageItem: PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      webformatURL: PropTypes.string.isRequired,
-      largeImageURL: PropTypes.string.isRequired,
-      tags: PropTypes.string.isRequired,
-    }),
+export const ImageGalleryItem = ({
+  imageItem: { webformatURL, tags, largeImageURL },
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const toogleModal = () => {
+    setIsModalOpen(prevState => !prevState);
   };
 
-  state = { isModalOpen: false };
+  return (
+    <li className={css.ImageGalleryItem} onClick={toogleModal}>
+      <img
+        src={webformatURL}
+        alt={tags}
+        className={css.ImageGalleryItemImage}
+      />
+      {isModalOpen && (
+        <Modal onCloseModal={toogleModal}>
+          <img src={largeImageURL} alt={tags} />
+        </Modal>
+      )}
+    </li>
+  );
+};
 
-  toogleModal = () => {
-    this.setState(prevState => ({ isModalOpen: !prevState.isModalOpen }));
-  };
-
-  render() {
-    const { webformatURL, tags, largeImageURL } = this.props.imageItem;
-
-    return (
-      <li className={css.ImageGalleryItem} onClick={this.toogleModal}>
-        <img
-          src={webformatURL}
-          alt={tags}
-          className={css.ImageGalleryItemImage}
-        />
-        {this.state.isModalOpen && (
-          <Modal onCloseModal={this.toogleModal}>
-            <img src={largeImageURL} alt={tags} />
-          </Modal>
-        )}
-      </li>
-    );
-  }
-}
+ImageGalleryItem.propTypes = {
+  imageItem: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    webformatURL: PropTypes.string.isRequired,
+    largeImageURL: PropTypes.string.isRequired,
+    tags: PropTypes.string.isRequired,
+  }),
+};

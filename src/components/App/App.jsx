@@ -1,74 +1,70 @@
 import { SerchBar } from '../Searchbar/Searchbar';
 import { ImageGallery } from '../ImageGallery/ImageGallery';
 import { Button } from 'components/Button/Button';
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { InfinitySpin } from 'react-loader-spinner';
 import { getImges } from '../../api';
 import css from './App.module.css';
-
 import { ErrorMessage } from 'components/ErrorMessage/ErrorMessage';
 
-export class App extends Component {
-  state = {
-    page: 1,
-    keyWord: '',
-    images: [],
-    isLoading: false,
-    error: null,
+export const App = () => {
+  const [page, setPage] = useState(1);
+  const [keyWord, setKeyWord] = useState('');
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const totalHits = page * 12;
+
+  const getKeyWord = q => {
+    setKeyWord(q.trim());
+    setPage(1);
+    setImages([]);
+    setError(null);
   };
 
-  getKeyWord = q => {
-    this.setState({ keyWord: q.trim(), page: 1, images: [], error: null });
-  };
+  useEffect(() => {
+    async function fetchImages() {
+      if (keyWord) {
+        try {
+          setIsLoading(true);
 
-  componentDidUpdate = async (_, prevState) => {
-    const { keyWord, page } = this.state;
+          const fetchImages = await getImges(keyWord, page);
 
-    if (prevState.page !== page || (prevState.keyWord !== keyWord && keyWord)) {
-      try {
-        this.setState({ isLoading: true });
-        const fetchImages = await getImges(keyWord, page);
-        this.setState(prevState => ({
-          images: [...prevState.images, ...fetchImages.hits],
-        }));
-      } catch (error) {
-        this.setState({ error: 'Something was happened, try again' });
-      } finally {
-        this.setState({ isLoading: false });
+          setImages(prevState => [...prevState, ...fetchImages.hits]);
+        } catch (error) {
+          setError('Something was happened, try again');
+        } finally {
+          setIsLoading(false);
+        }
       }
     }
+    fetchImages();
+  }, [keyWord, page]);
+
+  const loadMore = () => {
+    setPage(prevState => (prevState += 1));
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
+  return (
+    <div className={css.App}>
+      <SerchBar onSubmit={getKeyWord} />
+      {isLoading && (
+        <div className={css.Loader}>
+          <InfinitySpin width="200" color="#3f51b5" />
+        </div>
+      )}
+      {images.length > 0 && keyWord && <ImageGallery images={images} />}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
 
-  render() {
-    const { images, page, isLoading, error, keyWord } = this.state;
-    const totalHits = page * 12;
+      {keyWord && images.length === 0 && !isLoading && (
+        <ErrorMessage>Nothing was found by your request</ErrorMessage>
+      )}
+      {!keyWord && <ErrorMessage>Enter keyword to search</ErrorMessage>}
 
-    return (
-      <div className={css.App}>
-        <SerchBar onSubmit={this.getKeyWord} />
-        {isLoading && (
-          <div className={css.Loader}>
-            <InfinitySpin width="200" color="#3f51b5" />
-          </div>
-        )}
-        {images.length > 0 && keyWord && <ImageGallery images={images} />}
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-
-        {keyWord && images.length === 0 && !isLoading && (
-          <ErrorMessage>Nothing was found by your request</ErrorMessage>
-        )}
-        {!keyWord && <ErrorMessage>Enter keyword to search</ErrorMessage>}
-
-        {images.length > 11 && totalHits <= 488 && keyWord && (
-          <Button onButtonClick={this.loadMore}>Load more</Button>
-        )}
-      </div>
-    );
-  }
-}
+      {images.length > 11 && totalHits <= 488 && keyWord && (
+        <Button onButtonClick={loadMore}>Load more</Button>
+      )}
+    </div>
+  );
+};
