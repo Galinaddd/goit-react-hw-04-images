@@ -12,9 +12,6 @@ export const SerchBar = ({ onSubmit }) => {
 
   const handleSubmit = evt => {
     evt.preventDefault();
-    console.log(onSubmit);
-    console.log(serchQuery);
-
     onSubmit(serchQuery);
   };
 
